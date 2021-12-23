@@ -1,32 +1,35 @@
-import {
-  Links,
-  LiveReload,
-  Meta,
-  Outlet,
-  Scripts,
-  ScrollRestoration
-} from "remix";
-import type { MetaFunction } from "remix";
+import { ChakraProvider } from "@chakra-ui/react";
+import { LiveReload, Outlet, Scripts, ScrollRestoration } from "remix";
+import theme from "~/theme";
 
-export const meta: MetaFunction = () => {
-  return { title: "New Remix App" };
-};
-
-export default function App() {
+function Document({
+  children,
+  title = "멋쟁이 사자처럼 명지대 Admin",
+}: {
+  children: React.ReactNode;
+  title?: string;
+}) {
   return (
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <Meta />
-        <Links />
+        <title>{title}</title>
       </head>
       <body>
-        <Outlet />
+        <ChakraProvider theme={theme}>{children}</ChakraProvider>
         <ScrollRestoration />
         <Scripts />
         {process.env.NODE_ENV === "development" && <LiveReload />}
       </body>
     </html>
+  );
+}
+
+export default function App() {
+  return (
+    <Document>
+      <Outlet />
+    </Document>
   );
 }
