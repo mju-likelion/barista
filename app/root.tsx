@@ -1,6 +1,27 @@
 import { ChakraProvider } from "@chakra-ui/react";
-import { LiveReload, Outlet, Scripts, ScrollRestoration } from "remix";
+import {
+  LiveReload,
+  LoaderFunction,
+  Outlet,
+  Scripts,
+  ScrollRestoration,
+  useLoaderData,
+} from "remix";
 import theme from "~/theme";
+
+export const loader: LoaderFunction = () => {
+  return {
+    ENV: {
+      FIREBASE_API_KEY: process.env.FIREBASE_API_KEY,
+      FIREBASE_AUTH_DOMAIN: process.env.FIREBASE_AUTH_DOMAIN,
+      FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID,
+      FIREBASE_STORAGE_BUCKET: process.env.FIREBASE_STORAGE_BUCKET,
+      FIREBASE_MESSAGING_SENDER_ID: process.env.FIREBASE_MESSAGING_SENDER_ID,
+      FIREBASE_APP_ID: process.env.FIREBASE_APP_ID,
+      FIREBASE_MEASUREMENT_ID: process.env.FIREBASE_MEASUREMENT_ID,
+    },
+  };
+};
 
 function Document({
   children,
@@ -9,6 +30,8 @@ function Document({
   children: React.ReactNode;
   title?: string;
 }) {
+  const data = useLoaderData();
+
   return (
     <html lang="en">
       <head>
@@ -19,6 +42,11 @@ function Document({
       <body>
         <ChakraProvider theme={theme}>{children}</ChakraProvider>
         <ScrollRestoration />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.ENV = ${JSON.stringify(data.ENV)}`,
+          }}
+        />
         <Scripts />
         {process.env.NODE_ENV === "development" && <LiveReload />}
       </body>
