@@ -1,23 +1,18 @@
-import { User } from "@firebase/auth";
-import { useEffect, useState } from "react";
-import { auth, signInWithGoogle } from "~/firebase-config";
+import { useEffect } from "react";
+import { fb } from "~/firebase-config";
 
 export default function SignIn() {
-  const [user, setUser] = useState<User | null>(null);
-
   useEffect(() => {
-    auth.onAuthStateChanged(user => {
-      setUser(user);
+    fb.auth.onAuthStateChanged(async () => {
+      await fb.createUserIfNotExist();
+      const isAdmin = await fb.checkIsAdmin();
+      console.log(isAdmin);
     });
   }, []);
 
-  useEffect(() => {
-    console.log(user);
-  }, [user]);
-
   return (
     <>
-      <button onClick={signInWithGoogle}>Sign In with Google</button>
+      <button onClick={fb.signIn}>Sign In with Google</button>
     </>
   );
 }

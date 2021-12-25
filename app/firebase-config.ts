@@ -1,5 +1,13 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import {
+  collection,
+  CollectionReference,
+  doc,
+  getDoc,
+  getFirestore,
+  setDoc,
+} from "firebase/firestore";
 
 const isClient = typeof window !== "undefined";
 
@@ -23,11 +31,75 @@ const firebaseConfig = {
     : process.env.FIREBASE_MEASUREMENT_ID,
 };
 
-initializeApp(firebaseConfig);
+interface FirestoreUser {
+  name: string;
+  likelionEmail: string;
+  isAdmin: boolean;
+}
 
-export const auth = getAuth();
-const provider = new GoogleAuthProvider();
-provider.setCustomParameters({
-  hd: "likelion.org",
-});
-export const signInWithGoogle = () => signInWithPopup(auth, provider);
+class FB {
+  readonly auth;
+  readonly db;
+
+  private readonly provider;
+  private readonly usersRef;
+
+  constructor() {
+    initializeApp(firebaseConfig);
+    this.auth = getAuth();
+    this.db = getFirestore();
+
+    this.provider = new GoogleAuthProvider();
+    this.provider.setCustomParameters({
+      hd: "likelion.org",
+    });
+    this.usersRef = collection(
+      this.db,
+      "users"
+    ) as CollectionReference<FirestoreUser>;
+  }
+
+  signIn() {
+    return signInWithPopup(this.auth, this.provider);
+  }
+
+  async checkUserExist() {
+    if (!this.auth.currentUser) {
+      throw new Error("Please log in first");
+    }
+    const userSnap = await getDoc(
+      doc(this.usersRef, this.auth.currentUser.uid)
+    );
+    return userSnap.exists();
+  }
+
+  async createCurrentUser() {
+    if (!this.auth.currentUser) {
+      throw new Error("Please log in first");
+    }
+    await setDoc(doc(this.usersRef, this.auth.currentUser.uid), {
+      name: this.auth.currentUser.displayName || "",
+      likelionEmail: this.auth.currentUser.email || "",
+      isAdmin: false,
+    });
+  }
+
+  async createUserIfNotExist() {
+    const exist = await this.checkUserExist();
+    if (!exist) {
+      await this.createCurrentUser();
+    }
+  }
+
+  async checkIsAdmin() {
+    if (!this.auth.currentUser) {
+      throw new Error("Please log in first");
+    }
+    const userSnap = await getDoc<FirestoreUser>(
+      doc<FirestoreUser>(this.usersRef, this.auth.currentUser.uid)
+    );
+    return !!userSnap.data()?.isAdmin;
+  }
+}
+
+export const fb = new FB();
